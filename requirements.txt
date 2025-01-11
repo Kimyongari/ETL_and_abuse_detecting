@@ -1,0 +1,10 @@
+pytchat
+pandas
+requests
+python-dotenv
+pafy
+youtube-dl
+google-api-python-client
+sqlalchemy
+openai
+transformers
