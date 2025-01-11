@@ -116,11 +116,14 @@ def train(model, df, emb_model_name, EPOCH=5, batch_size=32):
         best_acc = 0
         best_f1 = 0
         best_roc_auc = 0
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f'train on {device}')
+    model = model.to(device)
     for epoch in range(EPOCH):
         model.train()
         for batch in tqdm(train_dataloader, desc=f'epoch: {epoch+1}'):
-            input_ids = batch['input_ids']
-            labels = batch['labels']
+            input_ids = batch['input_ids'].to(device)
+            labels = batch['labels'].to(device)
             logits = model(input_ids)
 
             loss = model._loss(logits, labels.view(-1,1))
@@ -133,8 +136,8 @@ def train(model, df, emb_model_name, EPOCH=5, batch_size=32):
             all_labels = []
             all_eval_loss = []
             for batch in valid_dataloader:
-                input_ids = batch['input_ids']
-                labels = batch['labels']
+                input_ids = batch['input_ids'].to(device)
+                labels = batch['labels'].to(device)
                 logits = model(input_ids)
                 eval_loss = model._loss(logits, labels.view(-1,1))
                 all_logits.append(logits)
@@ -160,15 +163,20 @@ def train(model, df, emb_model_name, EPOCH=5, batch_size=32):
         print(f'accuracy: {metric["accuracy"]}, f1: {metric["f1"]}, roc_auc: {metric["roc_auc"]}')
 
 def predict(texts, model, emb_model_name='klue/bert-base'):
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    print(f'predict on {device}')
     model.eval()
     tokenizer = AutoTokenizer.from_pretrained(emb_model_name)
-    input_ids = tokenizer(texts, truncation=True, padding="max_length", max_length=64, return_tensors="pt")['input_ids']
+    input_ids = tokenizer(texts, truncation=True, padding="max_length", max_length=64, return_tensors="pt")['input_ids'].to(device)
     logits = model(input_ids)
-    return logits
+    return logits.detach()
 
 def load_best_model():
     model = Model()
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
     model.load_state_dict(torch.load('results/best_model.pth'))
+    model.to(device)
     print('loaded best model.')
     return model
     

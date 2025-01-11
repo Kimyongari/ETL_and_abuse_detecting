@@ -16,13 +16,16 @@ def search_new():
 
     # games 테이블이 없으면 생성
     existing_routes_query = """
-    SELECT name FROM sqlite_master WHERE type='table' AND name='games';
+    SELECT name FROM sqlite_master;
     """
     games_exists = pd.read_sql(existing_routes_query, con=engine)
 
-    if games_exists.empty:
+    if 'games' not in games_exists['name'].values:
         # games 테이블이 없을 경우 새로 생성
         pd.DataFrame({'games': []}).to_sql('games', con=engine, if_exists='replace', index=False)
+
+    if 'labeled_chat_messages' not in games_exists['name'].values:
+        pd.read_csv('labeled_data_balanced.csv').to_sql('labeled_chat_messages', con = engine, if_exists = 'append', index = False)
 
     # games 테이블에서 기존 경로 가져오기
     existing_games_query = "SELECT games FROM games;"
@@ -58,7 +61,7 @@ def save_datas(routes):
     labeled_df['label'] = labeled_df['label'].astype(int)
 
     args = Namespace(
-    EPOCH=10,
+    EPOCH=5,
     batch_size=32,
     emb_model_name="klue/bert-base"
 )
@@ -66,7 +69,11 @@ def save_datas(routes):
     if os.path.isdir('results'):
         model.load_best_model()
     else:
-        train_data = pd.read_csv('labeled_data_balanced.csv')
+        existing_routes_query = """
+            SELECT * FROM labeled_chat_messages
+            """
+        train_data = pd.read_sql(existing_routes_query, con=engine)
+        print('학습된 모델이 없어 SEED 데이터로 새 모델을 학습합니다.')
         model.train(train_data)
     logits = model.predict(labeled_df['text'].to_list())
     predictions = (logits > 0.5).int().view(-1).tolist()

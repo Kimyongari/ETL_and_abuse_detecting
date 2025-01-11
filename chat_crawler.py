@@ -91,7 +91,7 @@ def crawling(video_l:List):
             title = data['items'][0]['snippet']['title']
             id = data['items'][0]['id']
             file_name = f'chattings/{date}_{title}.csv'
-            if file_name in already_crawled:
+            if file_name.split('/')[-1] in already_crawled:
                 print(title, '는 이미 크롤링한 영상입니다.')
                 continue
             chat = pytchat.create(video_id = id)
