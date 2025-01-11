@@ -5,7 +5,7 @@ import sqlite3
 from labeler import labeling
 from model import _1DCNN_MODEL
 from argparse import Namespace
-
+import os
 
 def search_new():
     # CSV 파일 경로 읽기
@@ -58,12 +58,16 @@ def save_datas(routes):
     labeled_df['label'] = labeled_df['label'].astype(int)
 
     args = Namespace(
-    epochs=10,
+    EPOCH=10,
     batch_size=32,
     emb_model_name="klue/bert-base"
 )
     model = _1DCNN_MODEL(args)
-    model.load_best_model()
+    if os.path.isdir('results'):
+        model.load_best_model()
+    else:
+        train_data = pd.read_csv('labeled_data_balanced.csv')
+        model.train(train_data)
     logits = model.predict(labeled_df['text'].to_list())
     predictions = (logits > 0.5).int().view(-1).tolist()
     filtered_df = labeled_df[labeled_df['label'] == predictions]
