@@ -83,7 +83,7 @@ def crawling(video_l:List):
     already_crawled = os.listdir('chattings')
     for video_id in video_l:
         try:
-            url = f"https://www.googleapis.com/youtube/v3/videos?part=snippet&id={video_id}&key=AIzaSyCaOZGugJAXTNoTT46O_rfEZRBouKkvUUs"
+            url = f"https://www.googleapis.com/youtube/v3/videos?part=snippet&id={video_id}&key=]{os.getenv['YOUTUBE_API_KEY']}"
             response = requests.get(url)
             data = response.json()
            
